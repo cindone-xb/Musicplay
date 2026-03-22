@@ -24,17 +24,38 @@
       text-align: center;
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      width: 300px;
     }
 
-    button {
+    img {
+      width: 100%;
+      border-radius: 15px;
+      margin-bottom: 15px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 10px 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .controls button {
       background: #ff4d6d;
       border: none;
-      padding: 12px 20px;
+      padding: 10px 15px;
       color: white;
-      font-size: 16px;
       border-radius: 10px;
       cursor: pointer;
       margin: 5px;
+    }
+
+    .time {
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
     }
   </style>
 </head>
@@ -42,37 +63,73 @@
 <body>
 
 <div class="player">
-  <h1>🎵 Sweet Psycho</h1>
-  <p>Music Player</p>
+  <!-- COVER -->
+  <img src="https://i.imgur.com/8Km9tLL.jpg" alt="cover">
+
+  <h1>Sweet Psycho</h1>
 
   <!-- AUDIO -->
-  <audio id="audio" controls loop>
-  <source src="./sweet-psycho.mp3" type="audio/mpeg">
-  Browser tidak mendukung audio
-</audio>
+  <audio id="audio" loop>
+    <source src="sweet-psycho.mp3" type="audio/mpeg">
   </audio>
 
-  <br><br>
+  <!-- PROGRESS -->
+  <input type="range" id="progress" value="0">
 
-  <!-- BUTTON -->
-  <button id="playBtn">Play</button>
-  <button id="pauseBtn">Pause</button>
+  <div class="time">
+    <span id="current">0:00</span>
+    <span id="duration">0:00</span>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button id="playBtn">▶</button>
+    <button id="pauseBtn">⏸</button>
+  </div>
+
+  <!-- VOLUME -->
+  <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
 </div>
 
-<!-- SCRIPT WAJIB DI BAWAH -->
 <script>
   const audio = document.getElementById('audio');
   const playBtn = document.getElementById('playBtn');
   const pauseBtn = document.getElementById('pauseBtn');
+  const progress = document.getElementById('progress');
+  const volume = document.getElementById('volume');
+  const current = document.getElementById('current');
+  const duration = document.getElementById('duration');
 
-  playBtn.addEventListener('click', function() {
-    audio.play().catch(err => {
-      alert("Gagal play: " + err);
-    });
+  playBtn.addEventListener('click', () => {
+    audio.play();
   });
 
-  pauseBtn.addEventListener('click', function() {
+  pauseBtn.addEventListener('click', () => {
     audio.pause();
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    progress.value = (audio.currentTime / audio.duration) * 100 || 0;
+
+    let min = Math.floor(audio.currentTime / 60);
+    let sec = Math.floor(audio.currentTime % 60);
+    if (sec < 10) sec = "0" + sec;
+    current.textContent = `${min}:${sec}`;
+  });
+
+  audio.addEventListener('loadedmetadata', () => {
+    let min = Math.floor(audio.duration / 60);
+    let sec = Math.floor(audio.duration % 60);
+    if (sec < 10) sec = "0" + sec;
+    duration.textContent = `${min}:${sec}`;
+  });
+
+  progress.addEventListener('input', () => {
+    audio.currentTime = (progress.value / 100) * audio.duration;
+  });
+
+  volume.addEventListener('input', () => {
+    audio.volume = volume.value;
   });
 </script>
 
