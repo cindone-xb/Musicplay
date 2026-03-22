@@ -3,77 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Music Player - Sweet Psycho</title>
+  <title>Mini Spotify</title>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      background: linear-gradient(135deg, #1e1e2f, #3a3a6a);
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
       color: white;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
     }
 
     .player {
-      background: rgba(255,255,255,0.1);
-      padding: 30px;
+      width: 320px;
+      background: #1e293b;
+      padding: 20px;
       border-radius: 20px;
       text-align: center;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      width: 300px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
     img {
       width: 100%;
       border-radius: 15px;
-      margin-bottom: 15px;
+      animation: spin 6s linear infinite;
+      animation-play-state: paused;
     }
 
-    h1 {
-      font-size: 20px;
+    img.playing {
+      animation-play-state: running;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    h2 {
       margin: 10px 0;
+    }
+
+    .controls button {
+      background: #22c55e;
+      border: none;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
     }
 
     input[type="range"] {
       width: 100%;
     }
 
-    .controls button {
-      background: #ff4d6d;
-      border: none;
-      padding: 10px 15px;
-      color: white;
-      border-radius: 10px;
-      cursor: pointer;
-      margin: 5px;
-    }
-
     .time {
-      font-size: 12px;
       display: flex;
       justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .playlist {
+      margin-top: 15px;
+      text-align: left;
+    }
+
+    .song {
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .song:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .active {
+      background: rgba(34,197,94,0.3);
     }
   </style>
 </head>
-
 <body>
 
 <div class="player">
-  <!-- COVER -->
-  <img src="https://i.imgur.com/8Km9tLL.jpg" alt="cover">
+  <img id="cover" src="https://i.imgur.com/8Km9tLL.jpg">
+  <h2 id="title">Sweet Psycho</h2>
 
-  <h1>Sweet Psycho</h1>
+  <audio id="audio"></audio>
 
-  <!-- AUDIO -->
-  <audio id="audio" loop>
-    <source src="sweet-psycho.mp3" type="audio/mpeg">
-  </audio>
-
-  <!-- PROGRESS -->
   <input type="range" id="progress" value="0">
 
   <div class="time">
@@ -81,32 +101,69 @@
     <span id="duration">0:00</span>
   </div>
 
-  <!-- CONTROLS -->
   <div class="controls">
-    <button id="playBtn">▶</button>
-    <button id="pauseBtn">⏸</button>
+    <button id="prev">⏮</button>
+    <button id="play">▶</button>
+    <button id="pause">⏸</button>
+    <button id="next">⏭</button>
   </div>
 
-  <!-- VOLUME -->
   <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
+
+  <div class="playlist" id="playlist"></div>
 </div>
 
 <script>
+  const songs = [
+    {
+      title: "Sweet Psycho",
+      src: "sweet-psycho.mp3",
+      cover: "https://i.imgur.com/8Km9tLL.jpg"
+    }
+  ];
+
+  let currentSong = 0;
+
   const audio = document.getElementById('audio');
-  const playBtn = document.getElementById('playBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
+  const cover = document.getElementById('cover');
+  const title = document.getElementById('title');
   const progress = document.getElementById('progress');
-  const volume = document.getElementById('volume');
   const current = document.getElementById('current');
   const duration = document.getElementById('duration');
+  const playlist = document.getElementById('playlist');
 
-  playBtn.addEventListener('click', () => {
+  function loadSong(index) {
+    const song = songs[index];
+    audio.src = song.src;
+    title.textContent = song.title;
+    cover.src = song.cover;
+    highlightSong();
+  }
+
+  function playSong() {
     audio.play();
-  });
+    cover.classList.add('playing');
+  }
 
-  pauseBtn.addEventListener('click', () => {
+  function pauseSong() {
     audio.pause();
-  });
+    cover.classList.remove('playing');
+  }
+
+  document.getElementById('play').onclick = playSong;
+  document.getElementById('pause').onclick = pauseSong;
+
+  document.getElementById('next').onclick = () => {
+    currentSong = (currentSong + 1) % songs.length;
+    loadSong(currentSong);
+    playSong();
+  };
+
+  document.getElementById('prev').onclick = () => {
+    currentSong = (currentSong - 1 + songs.length) % songs.length;
+    loadSong(currentSong);
+    playSong();
+  };
 
   audio.addEventListener('timeupdate', () => {
     progress.value = (audio.currentTime / audio.duration) * 100 || 0;
@@ -128,9 +185,34 @@
     audio.currentTime = (progress.value / 100) * audio.duration;
   });
 
-  volume.addEventListener('input', () => {
-    audio.volume = volume.value;
+  document.getElementById('volume').addEventListener('input', (e) => {
+    audio.volume = e.target.value;
   });
+
+  function renderPlaylist() {
+    playlist.innerHTML = '';
+    songs.forEach((song, index) => {
+      const div = document.createElement('div');
+      div.textContent = song.title;
+      div.classList.add('song');
+      div.onclick = () => {
+        currentSong = index;
+        loadSong(index);
+        playSong();
+      };
+      playlist.appendChild(div);
+    });
+  }
+
+  function highlightSong() {
+    const items = document.querySelectorAll('.song');
+    items.forEach((el, i) => {
+      el.classList.toggle('active', i === currentSong);
+    });
+  }
+
+  loadSong(currentSong);
+  renderPlaylist();
 </script>
 
 </body>
